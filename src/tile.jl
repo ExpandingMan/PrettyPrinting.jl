@@ -14,7 +14,11 @@ end
 struct LiteralBlock <: AbstractBlock
     atom::Any
     len::Int
+    color::Symbol
+    bold::Bool
 end
+
+LiteralBlock(atom, len) = LiteralBlock(atom, len, :normal, false)
 
 struct HorizontalBlock <: AbstractBlock
 end
@@ -39,11 +43,14 @@ let NO_ARGS = Layout[],
 
 global literal, indent
 
-literal(str::String) =
-    Layout(LiteralBlock(str, textwidth(str)), NO_ARGS)
+function literal(str::String, color::Symbol=:normal; bold::Bool=false)
+    Layout(LiteralBlock(str, textwidth(str), color, bold), NO_ARGS)
+end
 
-literal(str::Union{AbstractString,Symbol}) =
-    literal(string(str))
+function literal(str::Union{AbstractString,Symbol}, color::Symbol=:normal;
+                 bold::Bool=false)
+    literal(string(str), color; bold)
+end
 
 literal(atom, len::Int) =
     Layout(LiteralBlock(atom, len), NO_ARGS)
@@ -278,8 +285,8 @@ end
 
 function render(io::IO, blk::LiteralBlock, ::Vector{Layout}, col::Int, ::Vector{UInt8})
     atom = blk.atom
-    if atom isa String
-        print(io, atom)
+    if blk.color ≠ :normal || blk.bold
+        printstyled(io, atom; color=blk.color, bold=blk.bold)
     else
         print(io, atom)
     end
